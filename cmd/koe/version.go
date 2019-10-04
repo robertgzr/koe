@@ -8,5 +8,5 @@ var (
 )
 
 func version() string {
-	return fmt.Sprintf("joebot %v\nbuilt %s", Version, BuildTime)
+	return fmt.Sprintf("joebot %v (%s)", Version, BuildTime)
 }

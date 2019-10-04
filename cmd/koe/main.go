@@ -1,20 +1,20 @@
 package main
 
 import (
-	"errors"
 	"os"
+	"errors"
 
 	"github.com/go-joe/joe"
 	telegram "github.com/robertgzr/joe-adapter-telegram"
 )
 
-type Bot struct {
+type Koe struct {
 	*joe.Bot
 }
 
 func main() {
-	b := &Bot{
-		joe.New("rjoe",
+	b := &Koe{
+		joe.New("koe",
 			telegram.Adapter(os.Getenv("TELEGRAM_TOKEN")),
 		),
 	}
@@ -27,7 +27,7 @@ func main() {
 	}
 }
 
-func (b *Bot) HandleCommands(ev telegram.ReceiveCommandEvent) error {
+func (b *Koe) HandleCommands(ev telegram.ReceiveCommandEvent) error {
 	var err error
 
 	switch ev.Arg0 {
