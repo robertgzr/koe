@@ -1,11 +1,12 @@
 package main
 
 import (
-	"os"
 	"errors"
+	"os"
 
 	"github.com/go-joe/joe"
 	telegram "github.com/robertgzr/joe-adapter-telegram"
+	bolt "github.com/robertgzr/joe-memory-bolt"
 )
 
 type Koe struct {
@@ -16,6 +17,7 @@ func main() {
 	b := &Koe{
 		joe.New("koe",
 			telegram.Adapter(os.Getenv("TELEGRAM_TOKEN")),
+			bolt.Memory(os.Getenv("DB_PATH")),
 		),
 	}
 

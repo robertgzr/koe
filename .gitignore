@@ -1,2 +1,2 @@
 koe
-pkg/{joe-bot,telegram-adapter}
+pkg/{joe-bot,telegram-adapter,bolt-memory}
