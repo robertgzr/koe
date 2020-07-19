@@ -6,8 +6,8 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-joe/joe"
-	telegram "github.com/robertgzr/joe-adapter-telegram"
-	bolt "github.com/robertgzr/joe-memory-bolt"
+	bolt "github.com/robertgzr/joe-bolt-memory"
+	telegram "github.com/robertgzr/joe-telegram-adapter"
 	"github.com/robertgzr/koe/version"
 )
 
