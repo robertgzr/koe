@@ -1,2 +1,3 @@
 koe
 pkg/{joe-bot,telegram-adapter,bolt-memory}
+*.db

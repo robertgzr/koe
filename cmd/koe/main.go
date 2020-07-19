@@ -1,44 +1,26 @@
 package main
 
 import (
-	"errors"
+	"flag"
+	"log"
 	"os"
 
-	"github.com/go-joe/joe"
-	telegram "github.com/robertgzr/joe-adapter-telegram"
-	bolt "github.com/robertgzr/joe-memory-bolt"
+	"github.com/peterbourgon/ff/v3"
+	"github.com/robertgzr/koe"
 )
 
-type Koe struct {
-	*joe.Bot
-}
-
 func main() {
-	b := &Koe{
-		joe.New("koe",
-			telegram.Adapter(os.Getenv("TELEGRAM_TOKEN")),
-			bolt.Memory(os.Getenv("DB_PATH")),
-		),
+	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	var cfg koe.Config
+	fs.StringVar(&cfg.Root, "root", ".", "root path for the bot, will contain memory database")
+	fs.StringVar(&cfg.TelegramToken, "telegram-token", "", "api bot token")
+
+	if err := ff.Parse(fs, os.Args[1:],
+		ff.WithEnvVarPrefix("KOE"),
+	); err != nil {
+		log.Fatal(err)
 	}
 
-	b.Brain.RegisterHandler(b.HandleCommands)
-
-	err := b.Run()
-	if err != nil {
-		b.Logger.Fatal(err.Error())
-	}
-}
-
-func (b *Koe) HandleCommands(ev telegram.ReceiveCommandEvent) error {
-	var err error
-
-	switch ev.Arg0 {
-	case "version":
-		b.Say(ev.Channel(), version())
-
-	default:
-		err = errors.New("unknown command")
-	}
-
-	return err
+	koe.Run(cfg)
 }
