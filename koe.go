@@ -1,10 +1,10 @@
 package koe
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-joe/joe"
 	telegram "github.com/robertgzr/joe-adapter-telegram"
 	bolt "github.com/robertgzr/joe-memory-bolt"
@@ -29,9 +29,8 @@ func Run(cfg Config) {
 	}
 
 	b.Brain.RegisterHandler(b.HandleCommands)
-	b.Brain.RegisterHandler(b.HandleCallbackQueries)
-	b.Respond("ama", b.HowAreYou)
 	b.Respond("help", b.Usage)
+	b.Respond("ama", b.HowAreYou)
 
 	if err := b.Run(); err != nil {
 		b.Logger.Fatal(err.Error())
@@ -42,6 +41,8 @@ func (b *Koe) Usage(m joe.Message) error {
 	b.Say(m.Channel, `
 commands:
 /version
+/dump
+/fin <desc> <category> <amount>
 
 triggers:
 ama     asks how you are feeling
@@ -51,47 +52,55 @@ help    show this help
 }
 
 func (b *Koe) HandleCommands(ev telegram.ReceiveCommandEvent) error {
-	var err error
-
 	switch ev.Arg0 {
 	case "version":
 		b.Say(ev.Channel(), fmt.Sprintf("%v version %v (%v)",
 			version.Package, version.Version, version.Revision))
 
-	default:
-		err = errors.New("unknown command")
+	case "dump":
+		b.Say(ev.Channel(), "dumping next message")
+		if err := b.Store.Set("dump_messages", true); err != nil {
+			return err
+		}
+		b.Brain.RegisterHandler(func(ev joe.ReceiveMessageEvent) error {
+			var dump bool
+			ok, err := b.Store.Get("dump_messages", &dump)
+			if err != nil {
+				return err
+			}
+			if !ok || !dump {
+				return nil
+			}
+			b.Say(ev.Channel, spew.Sdump(ev.Data))
+			if _, err := b.Store.Delete("dump_messages"); err != nil {
+				return err
+			}
+			return nil
+		})
+
+	case "fin":
+		return b.FinHandler(ev)
+
 	}
-
-	return err
-}
-
-func (b *Koe) HandleCallbackQueries(ev telegram.ReceiveCallbackQeryEvent) error {
-	var err error
-
-	switch ev.Data.Data {
-	case "amazing":
-		b.Say(ev.Channel(), "> amazing\n:)")
-	case "ok":
-		b.Say(ev.Channel(), "> ok\nit's getting better...")
-	case "meh":
-		b.Say(ev.Channel(), "> meh\nneed to talk?")
-	default:
-		return nil
-	}
-	return err
+	return nil
 }
 
 func (b *Koe) HowAreYou(msg joe.Message) error {
-	adp2, ok := b.Adapter.(joe.Adapter2)
-	if !ok {
-		return fmt.Errorf("Adapter does not implement Self()")
-	}
-	tg, ok := adp2.Self().(*telegram.TelegramAdapter)
+	tg, ok := b.Adapter.(*telegram.TelegramAdapter)
 	if !ok {
 		return fmt.Errorf("Adapter not Telegram")
 	}
 	return tg.SendButtons(msg.Channel, "How are you?",
-		tg.NewButton("amazing"),
-		tg.NewButton("ok"),
-		tg.NewButton("meh"))
+		tg.NewButton("amazing", func(channel string) error {
+			b.Say(channel, "you said: amazing")
+			return nil
+		}),
+		tg.NewButton("ok", func(channel string) error {
+			b.Say(channel, "you said: ok")
+			return nil
+		}),
+		tg.NewButton("meh", func(channel string) error {
+			b.Say(channel, "you said: meh")
+			return nil
+		}))
 }
